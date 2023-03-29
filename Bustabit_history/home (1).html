@@ -1,0 +1,158 @@
+{% extends "layout.html" %} {%block content%}
+
+
+<script>
+  $(document).ready(function () {
+
+    $("#latest_btn").click(function () {
+      console.log("latest pressed");
+      $.ajax({
+        url: "/latestGameRetry",
+        type: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({"latestGameNumber":latestGameNumber, "predictionBustNumbers":null}),
+        dataType: "json",
+      })
+      .done(function (data) {
+        if (console && console.log) {
+          console.log(data);
+          var latestgameNumbers="";
+          latestgameNumbers+="<div>"+data.gameId+"</div>";
+          latestgameNumbers+="<div>"+data.bustNumber+"</div>";
+          document.getElementById("latestGameID").innerHTML = latestgameNumbers
+        }
+        latest_calls();
+      });
+        // console.log("returned value: ", returnedValue);
+    });
+
+    $("#start_btn").click(function () {
+      console.log("starting scrapper");
+      $.ajax({
+        url: "/beforeGame",
+        type: "POST",
+        contentType: "application/json",
+        dataType: "json",
+      })
+      .done(function (data) {
+
+        var displayResults="";
+        var diplayPrediction="";
+        var gameNumberqueue = [];
+        var bustNumberqueue = [];
+        var gameNumberPredictionqueue = [];
+        var predictionqueue = [];
+        var latestGameNumber;
+        if (console && console.log) {
+          console.log(data);
+          
+          var len=data.bustNumber.length;
+          
+          
+          for (var i=0; i < len; i++) {
+
+          
+            displayResults+="<tr> <td data-label=\"Game Number\">"+data.gameNumber[i]+"</td>";
+            displayResults+="<td data-label=\"Bust Number\">"+data.bustNumber[i]+"</td></tr>>";
+            gameNumberqueue.push(data.gameNumber[i]);
+            bustNumberqueue.push(data.bustNumber[i]);
+          }
+          latestGameNumber=data.gameNumber[len-1];
+
+          diplayPrediction+="<tr> <td data-label=\"Game Number\">"+(parseInt(latestGameNumber)+1).toString()+"</td>";
+          diplayPrediction+="<td data-label=\"Prediction\">"+data.predictionResult+"</td></tr>>";
+
+          console.log("prediction of Game # ", parseInt(latestGameNumber)+1," : ", data.predictionResult);
+          document.getElementById("latestGameIDTable").innerHTML = displayResults;
+          document.getElementById("predictionTable").innerHTML = diplayPrediction;
+          
+        }
+
+        var latest_calls =  async function(){
+  /// call your function here
+      console.log("latest pressed");
+      
+      $.ajax({
+        url: "/latestGameRetry",
+        type: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({"latestGameNumber":latestGameNumber, "predictionBustNumbers":bustNumberqueue}),
+        dataType: "json",
+      })
+      .done(function (data) {
+        if (console && console.log) {
+          console.log(data);
+
+          gameNumberqueue.push(data.gameId);
+          bustNumberqueue.push(data.bustNumber);
+          latestGameNumber=data.gameId;
+          gameNumberqueue.shift();
+          bustNumberqueue.shift();
+          displayResults="";
+
+          console.log(gameNumberqueue)
+          console.log(bustNumberqueue)
+          for (var i=gameNumberqueue.length-1; i > 0 ; i--) {
+            displayResults+="<tr> <td data-label=\"Game Number\">"+gameNumberqueue[i]+"</td>";
+            displayResults+="<td data-label=\"Bust Number\">"+bustNumberqueue[i]+"</td></tr>>";
+          }
+
+          diplayPrediction+="<tr> <td data-label=\"Game Number\">"+(parseInt(latestGameNumber)+1).toString()+"</td>";
+          diplayPrediction+="<td data-label=\"Prediction\">"+data.predictionResult+"</td></tr>>";
+
+
+          console.log("prediction of Game # ", parseInt(latestGameNumber)+1," : ", data.predictionResult);
+          document.getElementById("predictionTable").innerHTML = diplayPrediction;
+          document.getElementById("latestGameIDTable").innerHTML = displayResults
+        }
+        latest_calls();
+      });
+        // console.log("returned value: ", returnedValue);
+}
+latest_calls();
+      });
+
+      
+    });
+    
+  });
+  function predictHandler(event) {
+    console.log("button cllicked");
+  }
+</script>
+<div class="ui centered grid container">
+  <div class="row">
+    <button id="start_btn" class="ui red basic button">Start Scrapper</button>
+    <button id="latest_btn" class="ui blue basic button">Latest game</button>
+  </div>
+  <div class="row">
+
+        <div class="ui equal width grid">
+          <div class="column">
+            <table class="ui selectable red table">
+              <thead>
+                <tr><th>Game Number</th>
+                <th>Bust Number</th>
+              </tr></thead>
+              <tbody id=latestGameIDTable>
+              </tbody>
+            </table>
+          </div>
+          <div class="column">
+            <table class="ui selectable blue table">
+              <thead>
+                <tr><th>Game Number</th>
+                <th>Prediction</th>
+              </tr></thead>
+              <tbody id=predictionTable>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      
+      
+    </div>
+</div>
+
+{%endblock%}
